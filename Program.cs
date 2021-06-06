@@ -12,8 +12,8 @@ namespace FastMandelbrotGenTesting
 {
     class RoughDraft
     {
-        static int resx = 350;
-        static int resy = 200;
+        static int resx = 2560;
+        static int resy = 1440;
         
         static void Main(string[] args)
         {
@@ -25,11 +25,8 @@ namespace FastMandelbrotGenTesting
                 float a;
                 float b;
                 float atemp;
-                int iter;
-                int max_iter = 64; //ITERATION COUNT. VERY IMPORTANT!!
-
-                // Color Switcher
-                float grayscale;
+                float iter;
+                float max_iter = 16; //ITERATION COUNT. VERY IMPORTANT!!
 
                 for (int y = 0; y < image.Height; y++)
                 {
@@ -47,28 +44,36 @@ namespace FastMandelbrotGenTesting
                         *  }
                         */
 
-                        x0 = (x - (resx / 2)) * (2.5f / (resx / 2));
-                        y0 = (x - (resy / 2)) * (2 / resy);
+                        x0 = (float) (x - (resx / 2.0f)) * (2.5f / (resx / 2.0f));
+                        y0 = (float) (y - (resy / 2.0f)) * (2.0f / resy);
                         a = 0.0f;
                         b = 0.0f;
-                        iter = 0;
+                        iter = 0.0f;
 
-                        while ((a * a) + (b * b) <= 2 * 2 & iter <= max_iter)
+                        while ((a * a) + (b * b) <= 2.0f * 2.0f & iter <= max_iter)
                         {
                             atemp = (a * a) - (b * b) + x0;
-                            b = 2 * a * b + y0;
+                            b = 2.0f * a * b + y0;
                             a = atemp;
                             iter++;
                         }
 
-
-                        grayscale = (iter / max_iter) * 255;
+                        // float shade = iter;
                         // Output pixel with appropriate color
-                        pixelRowSpan[x] = new Rgba32(grayscale, grayscale, grayscale, 255.0f);
+                        // pixelRowSpan[x] = new Rgba32(shade, shade, shade, 255.0f);
+
+                        if (iter == max_iter | iter - 1 == max_iter)
+                        {
+                            pixelRowSpan[x] = new Rgba32(0.0f, 0.0f, 0.0f, 255.0f);
+                        }
+                        else
+                        {
+                            pixelRowSpan[x] = new Rgba32((float)iter / max_iter, 0.0f, 0.0f, 255.0f);
+                        }
 
                     }
-                }   
-                image.Save("1a.png");
+                }
+                image.Save("1p.png");
             }
         }
     }
