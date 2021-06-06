@@ -12,14 +12,16 @@ namespace FastMandelbrotGenTesting
 {
     class RoughDraft
     {
-        static int resx = 2560;
-        static int resy = 1440;
+        static int resx = 350;
+        static int resy = 200;
         
         static void Main(string[] args)
         {
             using (Image<Rgba32> image = new Image<Rgba32>(resx, resy))
             {
                 //Define Other Variables
+                float x0;
+                float y0;
                 float a;
                 float b;
                 float atemp;
@@ -45,26 +47,28 @@ namespace FastMandelbrotGenTesting
                         *  }
                         */
 
+                        x0 = (x - (resx / 2)) * (2.5f / (resx / 2));
+                        y0 = (x - (resy / 2)) * (2 / resy);
                         a = 0.0f;
                         b = 0.0f;
                         iter = 0;
 
                         while ((a * a) + (b * b) <= 2 * 2 & iter <= max_iter)
                         {
-                            atemp = (a * a) - (b * b) + x;
-                            b = 2 * a * b + y;
+                            atemp = (a * a) - (b * b) + x0;
+                            b = 2 * a * b + y0;
                             a = atemp;
                             iter++;
                         }
 
 
-                        grayscale = iter / 255;
+                        grayscale = (iter / max_iter) * 255;
                         // Output pixel with appropriate color
                         pixelRowSpan[x] = new Rgba32(grayscale, grayscale, grayscale, 255.0f);
 
                     }
                 }   
-                image.Save("bigtest.png");
+                image.Save("1a.png");
             }
         }
     }
