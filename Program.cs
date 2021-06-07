@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Threading;
 
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
@@ -10,70 +11,78 @@ using SixLabors.ImageSharp.Processing;
 
 namespace FastMandelbrotGenTesting
 {
-    class RoughDraft
-    {
-        static int resx = 2560;
-        static int resy = 1440;
-        
+    class Functioning
+    {       
         static void Main(string[] args)
+        {
+            // Console.WriteLine("X Dimension: ");
+            // int xsize = Convert.ToInt32(Console.ReadLine());
+            // Console.WriteLine("Y Dimension ");
+            // int ysize = Convert.ToInt32(Console.ReadLine());
+            int xsize = 160*4;
+            int ysize = 90*4;
+
+            Console.WriteLine("How Many Frames? ");
+            int framecount = Convert.ToInt32(Console.ReadLine());
+
+            for (int i = 0; i <= framecount; i++)
+            {
+                double zeem = 3.0 / Math.Pow(1.05, i); //PAY ATTENTION. SWITCH BACK TO i.
+                Mandelbrot(xsize, ysize, 0.251, 0.00005, 32 + 2 * i, zeem, i.ToString());
+                Console.WriteLine("Frame " + i.ToString() + " Complete.");
+            }
+            
+        }
+        static void Mandelbrot(int resx, int resy, double originx, double originy, float max_iter, double zoom, string fileName)
         {
             using (Image<Rgba32> image = new Image<Rgba32>(resx, resy))
             {
                 //Define Other Variables
-                float x0;
-                float y0;
-                float a;
-                float b;
-                float atemp;
+                double x0;
+                double y0;
+                double a;
+                double b;
+                double atemp;
                 float iter;
-                float max_iter = 16; //ITERATION COUNT. VERY IMPORTANT!!
 
                 for (int y = 0; y < image.Height; y++)
                 {
                     Span<Rgba32> pixelRowSpan = image.GetPixelRowSpan(y);
                     for (int x = 0; x < image.Width; x++)
                     {
-                        /*
-                        *  if (Math.Round(Math.Sin(x) * resy, 0) == y)
-                        *  {
-                        *      pixelRowSpan[x] = new Rgba32(255.0f, 255.0f, 255.0f, 255.0f);
-                        *  }
-                        *  else
-                        *  {
-                        *      pixelRowSpan[x] = new Rgba32(0.0f, 0.0f, 0.0f, 255.0f);
-                        *  }
-                        */
+                        // Set initial values using current pixel, scale and transform to custom coordinate system.
+                        x0 = (x - (resx / 2.0)) * (zoom / resy) + originx;
+                        y0 = (y - (resy / 2.0)) * (zoom / resy) + originy;
 
-                        x0 = (float) (x - (resx / 2.0f)) * (2.5f / (resx / 2.0f));
-                        y0 = (float) (y - (resy / 2.0f)) * (2.0f / resy);
-                        a = 0.0f;
-                        b = 0.0f;
+                        // Initialize values for new pixel.
+                        a = 0.0;
+                        b = 0.0;
                         iter = 0.0f;
 
-                        while ((a * a) + (b * b) <= 2.0f * 2.0f & iter <= max_iter)
+                        // While the iteration result is within the 2r circle, and the iterations are below the limit.
+                        while ((a * a) + (b * b) <= 4.0 & iter <= max_iter)
                         {
+                            // Funky Math Stuff
                             atemp = (a * a) - (b * b) + x0;
-                            b = 2.0f * a * b + y0;
+                            b = 2.0 * a * b + y0;
                             a = atemp;
                             iter++;
                         }
 
-                        // float shade = iter;
-                        // Output pixel with appropriate color
-                        // pixelRowSpan[x] = new Rgba32(shade, shade, shade, 255.0f);
-
+                        // Make center set black, vary color for all else
                         if (iter == max_iter | iter - 1 == max_iter)
                         {
                             pixelRowSpan[x] = new Rgba32(0.0f, 0.0f, 0.0f, 255.0f);
                         }
                         else
                         {
-                            pixelRowSpan[x] = new Rgba32((float)iter / max_iter, 0.0f, 0.0f, 255.0f);
+                            float shade = iter / max_iter;
+                            pixelRowSpan[x] = new Rgba32(shade, shade, shade, 255.0f);
                         }
 
                     }
                 }
-                image.Save("1p.png");
+                image.Save("frame_" + fileName + ".png");
             }
         }
     }
