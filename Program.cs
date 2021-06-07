@@ -1,4 +1,18 @@
-﻿using System;
+﻿/* June P - Mandelbrot Fractal Generator Without Tutorial
+ * 
+ * Version 1.0 - 2:28 AM 6-07-2021
+ *   - Currently generates fractals and zooms at good perceptive rate
+ *   - Iteration control needs more work
+ *   - SINGLE THREADED
+ *   - No anti-aliasing
+ *   - Only single-spectrum color management
+ *   
+ * *Desired Features* for Version 1.1
+ *   - Multithreaded process for speed optimization
+ *   - TEST FOR FOR-LOOP ERRORS
+ */
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -14,21 +28,24 @@ namespace FastMandelbrotGenTesting
     class Functioning
     {       
         static void Main(string[] args)
+
         {
             // Console.WriteLine("X Dimension: ");
             // int xsize = Convert.ToInt32(Console.ReadLine());
             // Console.WriteLine("Y Dimension ");
             // int ysize = Convert.ToInt32(Console.ReadLine());
-            int xsize = 160*4;
-            int ysize = 90*4;
+            int xsize = 1280;
+            int ysize = 720;
 
             Console.WriteLine("How Many Frames? ");
             int framecount = Convert.ToInt32(Console.ReadLine());
 
             for (int i = 0; i <= framecount; i++)
             {
-                double zeem = 3.0 / Math.Pow(1.05, i); //PAY ATTENTION. SWITCH BACK TO i.
-                Mandelbrot(xsize, ysize, 0.251, 0.00005, 32 + 2 * i, zeem, i.ToString());
+                double zeem = 5.0 / Math.Pow(1.05, i); //PAY ATTENTION. SWITCH BACK TO i.
+                float it = (float) Math.Round(16.0 * Math.Pow(1.02, i), 0);
+                // Mandelbrot(xsize, ysize, 0.251, 0.00005, 32 + 2 * i, zeem, i.ToString());
+                Mandelbrot(xsize, ysize, 0.179, 0.56001, it, zeem, i.ToString());
                 Console.WriteLine("Frame " + i.ToString() + " Complete.");
             }
             
@@ -70,7 +87,7 @@ namespace FastMandelbrotGenTesting
                         }
 
                         // Make center set black, vary color for all else
-                        if (iter == max_iter | iter - 1 == max_iter)
+                        if (iter - 1 == max_iter)
                         {
                             pixelRowSpan[x] = new Rgba32(0.0f, 0.0f, 0.0f, 255.0f);
                         }
