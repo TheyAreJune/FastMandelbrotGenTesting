@@ -7,50 +7,91 @@
  *   - No anti-aliasing
  *   - Only single-spectrum color management
  *   
- * *Desired Features* for Version 1.1
- *   - Multithreaded process for speed optimization
- *   - TEST FOR FOR-LOOP ERRORS
+ * Version 1.1 - 11:57 AM 6-08-2021
+ *   - Multi-threaded
+ *     - Can set limit on maximum thread count
+ *     - File stream is locked so only one file can be written at a time, no overwrites
+ *   - Iteration control is better, needs improvement
+ *   - Color spectrum control needed, makes iteration control irrelevant
+ *   - No errors in the for loop skipping numbers now
+ * 
+ * *Desired Features* for Version 1.2
+ *   - Benchmarked testing for finding optimal thread counts
+ *   - Multi-color spectrum, test zooms for noisy flashes
+ *   - Anti-Aliasing or Denoising if possible (Likely not possible)
  */
 
 using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Diagnostics;
 
 using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.PixelFormats;
-using SixLabors.ImageSharp.Processing;
+// using SixLabors.ImageSharp.Processing; (Possible use for anti-aliasing later on)
 
 namespace FastMandelbrotGenTesting
 {
     class Functioning
     {       
+
+        private static readonly object locker = new object();
+
         static void Main(string[] args)
 
         {
+            // Gives script stronger power, faster speeds. Instantly crashes PC too.
+            // Process.GetCurrentProcess().PriorityClass = ProcessPriorityClass.High;
+
             // Console.WriteLine("X Dimension: ");
             // int xsize = Convert.ToInt32(Console.ReadLine());
             // Console.WriteLine("Y Dimension ");
             // int ysize = Convert.ToInt32(Console.ReadLine());
-            int xsize = 1280;
-            int ysize = 720;
+            int xsize = 1920;
+            int ysize = 1080;
+
+            int counter = 0;
+
+            int threaders = 0;
+            int max_threaders = 4;
 
             Console.WriteLine("How Many Frames? ");
             int framecount = Convert.ToInt32(Console.ReadLine());
 
             for (int i = 0; i <= framecount; i++)
             {
-                double zeem = 5.0 / Math.Pow(1.05, i); //PAY ATTENTION. SWITCH BACK TO i.
-                float it = (float) Math.Round(16.0 * Math.Pow(1.02, i), 0);
-                // Mandelbrot(xsize, ysize, 0.251, 0.00005, 32 + 2 * i, zeem, i.ToString());
-                Mandelbrot(xsize, ysize, 0.179, 0.56001, it, zeem, i.ToString());
-                Console.WriteLine("Frame " + i.ToString() + " Complete.");
+                checker:
+                    if (threaders < max_threaders)
+                    {
+                        Task.Factory.StartNew(() =>
+                        {
+                            threaders++;
+                            string name = counter.ToString();
+                            // Faster speeds, better, instantly crashes pc lmao
+                            // Thread.CurrentThread.Priority = ThreadPriority.Highest;
+
+                            double zeem = 5.0 / Math.Pow(1.05, i);
+                            float it = (float) Math.Round(8.0 * Math.Pow(1.015, i), 0);
+                                
+                            Mandelbrot(xsize, ysize, 0.251, 0.00005, it, zeem, counter);
+                            // Mandelbrot(xsize, ysize, 0.179, 0.56001, it, zeem, counter);
+                            Console.WriteLine("Frame " + name + " Complete.");
+                            threaders--;
+                        });
+                        Thread.Sleep(0010);
+                    }
+                    else
+                    {
+                        goto checker;
+                    }
+                
+                    counter++;
             }
+
+            Console.ReadKey();
             
         }
-        static void Mandelbrot(int resx, int resy, double originx, double originy, float max_iter, double zoom, string fileName)
+        static void Mandelbrot(int resx, int resy, double originx, double originy, float max_iter, double zoom, int frame)
         {
             using (Image<Rgba32> image = new Image<Rgba32>(resx, resy))
             {
@@ -99,7 +140,13 @@ namespace FastMandelbrotGenTesting
 
                     }
                 }
-                image.Save("frame_" + fileName + ".png");
+                lock(locker)
+                {
+                    // long milliseconds = DateTimeOffset.Now.ToUnixTimeMilliseconds();
+                    // string name = milliseconds.ToString();
+                    // Random r = new Random();
+                    image.Save("frame_" + frame + ".png");
+                }
             }
         }
     }
