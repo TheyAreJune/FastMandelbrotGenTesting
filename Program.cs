@@ -36,10 +36,18 @@ using SixLabors.ImageSharp;
 using SixLabors.ImageSharp.Processing;
 using SixLabors.ImageSharp.PixelFormats;
 using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Linq;
+using System.IO;
+using System.Drawing;
+using System.Globalization;
+
+using nom.tam.fits;
+using nom.tam.image;
+using nom.tam.util;
 
 class Functioning
 {
@@ -64,7 +72,7 @@ class Functioning
         // Summoners.MulSummoner(640, 360, 32, 128);
 
         // 3840*4, 1024
-        Summoners.BudSummoner(1024, 512, 72);
+        Summoners.BudSummoner(2560, 1024, 69420);
         // Summoners.BudSummoner(2560, 2560, 2000, 12);
         // Summoners.BudSummoner(2560, 2560, 20000, 13);
 
@@ -451,7 +459,12 @@ class Generators
         using (Image<Rgba32> bimage = new Image<Rgba32>((int) resx, (int) resy))
         {
             // Point-Interaction Counter or whatever
-            int[,] hitTicker = new int[(int) resx, (int) resy];
+            int[][] hitTicker = new int[(int) resy][];
+
+            for (int aa = 0; aa < resy; aa++)
+            {
+                hitTicker[aa] = new int[(int) resx];
+            }
 
             //Define Other Variables
             double x0;      // Initial x coord
@@ -500,21 +513,34 @@ class Generators
 
                         if (xloc >= 0 & xloc < resx & yloc >= 0 & yloc < resy)
                         {
-                            hitTicker[xloc, yloc]++;
+                            hitTicker[xloc][yloc] = (short) (hitTicker[xloc][yloc] + 2); //Center pixel, full value.
+
+                            // Wider radius, may add fade later
+                            if (xloc != resx - 1 & xloc != 0)
+                            {
+                                hitTicker[xloc - 1][yloc]++;
+                                hitTicker[xloc + 1][yloc]++;
+                            }
+                            if (yloc != resy - 1 & yloc != 0)
+                            {
+                                hitTicker[xloc][yloc - 1]++;
+                                hitTicker[xloc][yloc + 1]++;
+                            }
+
                         }
                         iter++;
                     }
                 }
             }
 
-            int bmax = hitTicker[0,0];
+            int bmax = hitTicker[0][0];
             for (int k = 0; k < resy; k++)
             {
                 for (int l = 0; l < resx; l++)
                 {
-                    if (hitTicker[k,l] > bmax)
+                    if (hitTicker[k][l] > bmax)
                     {
-                        bmax = hitTicker[k, l];
+                        bmax = hitTicker[k][l];
                     }
                 }
             }
@@ -527,7 +553,7 @@ class Generators
                 Span<Rgba32> pixelRowSpan = bimage.GetPixelRowSpan(i);
                 for (int j = 0; j < resx; j++)
                 {
-                    shade = (float) Math.Pow((double) hitTicker[i,j] / (double) bmax, 1.0 / 3.0);
+                    shade = (float) Math.Pow((double) hitTicker[i][j] / (double) bmax, 1.0 / 3.0);
                     // shade = (float) hitTicker[i, j] / (float) bmax;
                     pixelRowSpan[j] = new Rgba32(shade, shade, shade, 255.0f);
                 }
@@ -535,7 +561,34 @@ class Generators
 
             bimage.Save("Buddhabrot-" + frame + "_" + max_iter + ".png");
             bimage.Save("recent-buhhdabrot.png");
+            bimage.Mutate(x => x.Resize((int) resx / 4, 0, KnownResamplers.Welch));
+            bimage.Save("Buddhabrot-" + frame + "_" + max_iter + "soft.png");
+
+            // Console.WriteLine(hitTicker.Rank);
+            // Console.WriteLine(hitTicker.GetLength(0));
+            // Console.WriteLine(hitTicker.GetLength(1));
+
+            Exporter.SaveFITS(hitTicker, (int) resx, (int) resy);
 
         }
+    }
+}
+
+class Exporter
+{
+    public static void SaveFITS(int[][] loc, int resx, int resy)
+    {
+        Fits f = new Fits();
+        ImageHDU hdu = (ImageHDU) Fits.MakeHDU(loc);
+        //BasicHDU hdu = Fits.MakeHDU(loc);
+        // hdu.AddValue("BITPIX", 16, null);  // set bit depth of 16 bit
+        // hdu.AddValue("NAXIS", 2, null);    // 2D-image
+        //hdu.AddValue("NAXIS1", resx);
+        //hdu.AddValue("NAXIS2", resy, null);
+        f.AddHDU(hdu);
+        //fits.AddHDU(hdu);
+        BufferedFile file = new BufferedFile("test.fits", FileAccess.ReadWrite, FileShare.ReadWrite);
+        f.Write(file);
+        file.Close();
     }
 }
